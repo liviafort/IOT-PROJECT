@@ -3,8 +3,8 @@ services:
     image: eclipse-mosquitto:2.0
     container_name: mqtt-broker
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "0.0.0.0:1883:1883"
+      - "127.0.0.1:9001:9001"
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
@@ -42,7 +42,7 @@ services:
     image: smeagolworms4/mqtt-explorer
     container_name: mqtt-web-ui
     ports:
-      - "3000:4000"
+      - "127.0.0.1:3000:4000"
     environment:
       - HTTP_PORT=4000
       - MQTT_HOST=mosquitto
