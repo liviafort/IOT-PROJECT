@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mosquitto:
     image: eclipse-mosquitto:2.0
@@ -41,11 +39,12 @@ services:
         max-file: "3"
 
   mqtt-web-ui:
-    image: vergissberlin/mqtt-ui
+    image: smeagolworms4/mqtt-explorer
     container_name: mqtt-web-ui
     ports:
-      - "8080:80"
+      - "8080:4000"
     environment:
+      - HTTP_PORT=4000
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
     depends_on:
