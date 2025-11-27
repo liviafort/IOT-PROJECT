@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM arm32v7/python:3.11-slim
 
 # Definir diretório de trabalho
 WORKDIR /app

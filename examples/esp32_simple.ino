@@ -6,18 +6,40 @@
  *
  * Biblioteca necessária:
  * - PubSubClient: https://github.com/knolleary/pubsubclient
+ *
+ * CONFIGURAÇÃO PARA RASPBERRY PI:
+ * ================================
+ * 1. Após instalar o gateway no Raspberry Pi, descubra o IP:
+ *    SSH no RPi: ssh pi@raspberrypi.local
+ *    Execute: hostname -I
+ *
+ * 2. Substitua o IP abaixo (MQTT_SERVER) pelo IP do seu Raspberry Pi
+ * 3. O ESP32 e o Raspberry Pi devem estar na MESMA REDE WiFi
+ * 4. Cada ESP32 deve ter um DEVICE_ID único (ex: esp32_sala_01, esp32_cozinha_01)
  */
 
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-const char* WIFI_SSID = "SEU_WIFI";           // Nome da rede WiFi
-const char* WIFI_PASSWORD = "SUA_SENHA";      // Senha do WiFi
-const char* MQTT_SERVER = "173.212.213.63";    // IP do servidor Ubuntu
-const int MQTT_PORT = 1883;                   // Porta do MQTT
+// ============================================================================
+// CONFIGURAÇÃO - AJUSTE AQUI!
+// ============================================================================
 
-// ID único do seu ESP32 (mude se tiver mais de um)
-const char* DEVICE_ID = "esp32_sala_01";
+// 1. Configuração WiFi
+const char* WIFI_SSID = "SEU_WIFI";           // Nome da sua rede WiFi
+const char* WIFI_PASSWORD = "SUA_SENHA";      // Senha da sua rede WiFi
+
+// 2. Configuração MQTT Broker (Raspberry Pi)
+const char* MQTT_SERVER = "192.168.1.100";    // ← COLOQUE O IP DO SEU RASPBERRY PI AQUI!
+const int MQTT_PORT = 1883;                   // Porta padrão MQTT (não mude)
+
+// 3. Identificação do Dispositivo
+const char* DEVICE_ID = "esp32_sala_01";      // ← ID único para este ESP32
+                                               // Exemplos: esp32_sala_01, esp32_quarto_01, etc.
+
+// ============================================================================
+// NÃO ALTERE DAQUI PARA BAIXO (a menos que saiba o que está fazendo)
+// ============================================================================
 
 WiFiClient espClient;
 PubSubClient client(espClient);

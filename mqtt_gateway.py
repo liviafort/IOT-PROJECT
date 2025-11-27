@@ -49,6 +49,11 @@ def salvar_dados(client_id, topic, payload):
         # Adicionar novo log
         logs.append(data)
 
+        # Limitar tamanho do array para evitar arquivos muito grandes (otimização para RPi)
+        MAX_LOGS_PER_FILE = 10000
+        if len(logs) > MAX_LOGS_PER_FILE:
+            logs = logs[-MAX_LOGS_PER_FILE:]  # Mantém apenas últimas 10k mensagens
+
         # Salvar arquivo
         with open(log_file, 'w', encoding='utf-8') as f:
             json.dump(logs, f, indent=2, ensure_ascii=False)
