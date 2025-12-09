@@ -202,8 +202,16 @@ EOF
 # 6. Configurar encaminhamento de pacotes (opcional, para compartilhar internet)
 print_info "[6/8] Configurando encaminhamento de pacotes..."
 
-# Descomentar ip_forward no sysctl.conf
-sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+# Configurar ip_forward (criar arquivo se não existir)
+if [ -f /etc/sysctl.conf ]; then
+    # Arquivo existe, atualizar
+    sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+    # Adicionar se não existir a linha
+    grep -q "net.ipv4.ip_forward" /etc/sysctl.conf || echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+else
+    # Arquivo não existe, criar
+    echo "net.ipv4.ip_forward=1" > /etc/sysctl.conf
+fi
 
 # Aplicar imediatamente
 echo 1 > /proc/sys/net/ipv4/ip_forward
