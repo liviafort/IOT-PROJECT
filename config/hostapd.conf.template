@@ -1,0 +1,31 @@
+# Configuração do Access Point WiFi (hostapd)
+# Template - Será gerado automaticamente pelo setup-access-point.sh
+#
+# Para usar manualmente, copie para /etc/hostapd/hostapd.conf
+# e ajuste os valores conforme necessário
+
+interface=wlan0
+driver=nl80211
+
+# Configurações da rede WiFi
+ssid=RPi-IoT-Gateway
+channel=7
+hw_mode=g
+ieee80211n=1
+wmm_enabled=1
+ht_capab=[HT40][SHORT-GI-20][DSSS_CCK-40]
+
+# Configurações de segurança WPA2
+auth_algs=1
+wpa=2
+wpa_passphrase=iotgateway2024
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP CCMP
+rsn_pairwise=CCMP
+
+# País (Brasil)
+country_code=BR
+
+# Outras opções
+macaddr_acl=0
+ignore_broadcast_ssid=0

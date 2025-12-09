@@ -1,21 +1,15 @@
 /*
- * ESP32 - MQTT IoT Simple
+ * ESP32/ESP8266 - MQTT IoT Gateway
  *
- * Código simplificado que envia dados aleatórios de sensores
- * para o broker MQTT a cada 5 segundos
+ * Envia dados de sensores para o Raspberry Pi via MQTT
  *
  * Biblioteca necessária:
  * - PubSubClient: https://github.com/knolleary/pubsubclient
  *
- * CONFIGURAÇÃO PARA RASPBERRY PI:
- * ================================
- * 1. Após instalar o gateway no Raspberry Pi, descubra o IP:
- *    SSH no RPi: ssh pi@raspberrypi.local
- *    Execute: hostname -I
- *
- * 2. Substitua o IP abaixo (MQTT_SERVER) pelo IP do seu Raspberry Pi
- * 3. O ESP32 e o Raspberry Pi devem estar na MESMA REDE WiFi
- * 4. Cada ESP32 deve ter um DEVICE_ID único (ex: esp32_sala_01, esp32_cozinha_01)
+ * CONFIGURAÇÃO:
+ * 1. Ajuste DEVICE_ID para um ID único (ex: esp32_sala_01)
+ * 2. Faça upload no ESP32/ESP8266
+ * 3. O ESP conectará automaticamente no WiFi do Raspberry Pi
  */
 
 #include <WiFi.h>
@@ -25,20 +19,20 @@
 // CONFIGURAÇÃO - AJUSTE AQUI!
 // ============================================================================
 
-// 1. Configuração WiFi
-const char* WIFI_SSID = "SEU_WIFI";           // Nome da sua rede WiFi
-const char* WIFI_PASSWORD = "SUA_SENHA";      // Senha da sua rede WiFi
+// WiFi do Raspberry Pi (Access Point)
+const char* WIFI_SSID = "RPi-IoT-Gateway";        // WiFi criado pelo Raspberry Pi
+const char* WIFI_PASSWORD = "iotgateway2024";     // Senha padrão (mude se alterou no setup)
 
-// 2. Configuração MQTT Broker (Raspberry Pi)
-const char* MQTT_SERVER = "192.168.1.100";    // ← COLOQUE O IP DO SEU RASPBERRY PI AQUI!
-const int MQTT_PORT = 1883;                   // Porta padrão MQTT (não mude)
+// MQTT Broker (Raspberry Pi)
+const char* MQTT_SERVER = "192.168.50.1";         // IP fixo do Raspberry Pi
+const int MQTT_PORT = 1883;
 
-// 3. Identificação do Dispositivo
-const char* DEVICE_ID = "esp32_sala_01";      // ← ID único para este ESP32
-                                               // Exemplos: esp32_sala_01, esp32_quarto_01, etc.
+// Identificação única deste dispositivo
+const char* DEVICE_ID = "esp32_sala_01";          // ← MUDE PARA CADA ESP32!
+                                                   // Exemplos: esp32_quarto_01, esp32_cozinha_01
 
 // ============================================================================
-// NÃO ALTERE DAQUI PARA BAIXO (a menos que saiba o que está fazendo)
+// NÃO ALTERE DAQUI PARA BAIXO
 // ============================================================================
 
 WiFiClient espClient;
@@ -51,14 +45,15 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  Serial.println("\n\n=================================");
-  Serial.println("    ESP32 IoT MQTT Sender");
-  Serial.println("=================================");
+  Serial.println("\n================================");
+  Serial.println("ESP32 IoT - MQTT Sensor");
+  Serial.println("================================");
+  Serial.print("Device ID: ");
+  Serial.println(DEVICE_ID);
+  Serial.println("================================\n");
 
   connectWiFi();
-
   client.setServer(MQTT_SERVER, MQTT_PORT);
-  client.setCallback(messageReceived);
 }
 
 void loop() {
@@ -67,6 +62,7 @@ void loop() {
   }
   client.loop();
 
+  // Enviar dados do sensor
   if (millis() - lastSend > SEND_INTERVAL) {
     lastSend = millis();
     sendSensorData();
@@ -74,87 +70,66 @@ void loop() {
 }
 
 void connectWiFi() {
-  Serial.print("\nConectando ao WiFi: ");
+  Serial.print("Conectando WiFi: ");
   Serial.println(WIFI_SSID);
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
     delay(500);
     Serial.print(".");
     attempts++;
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✓ WiFi conectado!");
+    Serial.println("\nWiFi OK!");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\n✗ Falha ao conectar WiFi!");
-    Serial.println("Verifique SSID e senha");
+    Serial.println("\nERRO: WiFi falhou!");
+    Serial.println("Verifique se o Raspberry Pi está ligado");
+    Serial.println("Reiniciando em 10s...");
+    delay(10000);
+    ESP.restart();
   }
 }
 
 void connectMQTT() {
   while (!client.connected()) {
-    Serial.print("\nConectando ao MQTT broker...");
+    Serial.print("Conectando MQTT... ");
 
     if (client.connect(DEVICE_ID)) {
-      Serial.println(" ✓ Conectado!");
-
-      String statusMsg = "{\"device\":\"" + String(DEVICE_ID) + "\",\"status\":\"online\"}";
-      client.publish("iot/device/status", statusMsg.c_str());
-
-      client.subscribe("iot/commands/#");
-
+      Serial.println("OK!");
     } else {
-      Serial.print(" ✗ Falhou! Código: ");
-      Serial.print(client.state());
-      Serial.println("\nTentando novamente em 5 segundos...");
+      Serial.print("FALHOU! Código: ");
+      Serial.println(client.state());
+      Serial.println("Tentando novamente em 5s...");
       delay(5000);
     }
   }
 }
 
 void sendSensorData() {
+  // Simular leitura de sensores (substitua com sensores reais)
   float temperatura = random(150, 350) / 10.0;  // 15.0 a 35.0°C
   float umidade = random(300, 900) / 10.0;      // 30.0 a 90.0%
-  int luminosidade = random(0, 1024);           // 0 a 1023 
+  int luminosidade = random(0, 1024);           // 0 a 1023
 
-  String jsonMsg = "{";
-  jsonMsg += "\"device_id\":\"" + String(DEVICE_ID) + "\",";
-  jsonMsg += "\"temperatura\":" + String(temperatura, 1) + ",";
-  jsonMsg += "\"umidade\":" + String(umidade, 1) + ",";
-  jsonMsg += "\"luminosidade\":" + String(luminosidade) + ",";
-  jsonMsg += "\"timestamp\":" + String(millis());
-  jsonMsg += "}";
+  // Montar JSON
+  String json = "{";
+  json += "\"device\":\"" + String(DEVICE_ID) + "\",";
+  json += "\"temperatura\":" + String(temperatura, 1) + ",";
+  json += "\"umidade\":" + String(umidade, 1) + ",";
+  json += "\"luz\":" + String(luminosidade);
+  json += "}";
 
-  bool success = client.publish("iot/sensor/dados", jsonMsg.c_str());
+  // Publicar no tópico MQTT
+  bool ok = client.publish("iot/sensor/dados", json.c_str());
 
-  if (success) {
-    Serial.println("\n[ENVIADO]");
-    Serial.println("Tópico: iot/sensor/dados");
-    Serial.println("Dados: " + jsonMsg);
+  if (ok) {
+    Serial.println("[ENVIADO] " + json);
   } else {
-    Serial.println("\n[ERRO] Falha ao enviar!");
+    Serial.println("[ERRO] Falha ao enviar!");
   }
-
-  Serial.println("----------------------------");
-  Serial.print("Temperatura: "); Serial.print(temperatura); Serial.println("°C");
-  Serial.print("Umidade: "); Serial.print(umidade); Serial.println("%");
-  Serial.print("Luminosidade: "); Serial.println(luminosidade);
-  Serial.println("----------------------------");
-}
-
-void messageReceived(char* topic, byte* payload, unsigned int length) {
-  Serial.print("\n[MENSAGEM RECEBIDA] Tópico: ");
-  Serial.println(topic);
-  Serial.print("Conteúdo: ");
-
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-
 }

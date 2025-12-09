@@ -67,9 +67,6 @@ def salvar_dados(client_id, topic, payload):
 def on_connect(client, userdata, flags, rc):
     """Callback quando cliente conecta ao broker"""
     if rc == 0:
-        print("\n========================================")
-        print("   CONECTADO AO BROKER MQTT")
-        print("========================================")
 
         # Inscrever em todos os tópicos IoT comuns
         topics = [
@@ -128,9 +125,6 @@ def on_disconnect(client, userdata, rc):
 
 def main():
     """Função principal"""
-    print("========================================")
-    print("   MQTT GATEWAY IOT - INICIANDO")
-    print("========================================")
     print(f"Broker: {MQTT_BROKER}:{MQTT_PORT}")
     print(f"Diretório de dados: {DATA_DIR}")
     print(f"Timestamp: {datetime.now().isoformat()}")

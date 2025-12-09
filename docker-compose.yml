@@ -1,25 +1,31 @@
+version: '3.8'
+
 services:
+  # Mosquitto MQTT Broker
   mosquitto:
     image: eclipse-mosquitto:2.0
     container_name: mqtt-broker
     ports:
-      - "0.0.0.0:1883:1883"
-      - "127.0.0.1:9001:9001"
+      - "0.0.0.0:1883:1883"      # MQTT (acessível na rede)
+      - "127.0.0.1:9001:9001"    # WebSocket (apenas localhost)
     volumes:
-      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/config:/mosquitto/config:ro
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     restart: unless-stopped
     networks:
       - iot-network
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
 
+  # MQTT Gateway (Python)
   mqtt-gateway:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mqtt-gateway
     environment:
       - MQTT_BROKER=mosquitto
@@ -33,30 +39,31 @@ services:
     networks:
       - iot-network
     logging:
-      driver: "json-file"
+      driver: json-file
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
 
-  mqtt-web-ui:
-    image: smeagolworms4/mqtt-explorer
-    container_name: mqtt-web-ui
-    ports:
-      - "127.0.0.1:3000:4000"
-    environment:
-      - HTTP_PORT=4000
-      - MQTT_HOST=mosquitto
-      - MQTT_PORT=1883
-    depends_on:
-      - mosquitto
-    restart: unless-stopped
-    networks:
-      - iot-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+  # Web UI (OPCIONAL - descomente se quiser interface web)
+  # mqtt-web-ui:
+  #   image: smeagolworms4/mqtt-explorer
+  #   container_name: mqtt-web-ui
+  #   ports:
+  #     - "127.0.0.1:3000:4000"
+  #   environment:
+  #     - HTTP_PORT=4000
+  #     - MQTT_HOST=mosquitto
+  #     - MQTT_PORT=1883
+  #   depends_on:
+  #     - mosquitto
+  #   restart: unless-stopped
+  #   networks:
+  #     - iot-network
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "5m"
+  #       max-file: "2"
 
 networks:
   iot-network:

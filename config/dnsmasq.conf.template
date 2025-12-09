@@ -1,0 +1,39 @@
+# Configuração do DHCP Server (dnsmasq)
+# Template - Será gerado automaticamente pelo setup-access-point.sh
+#
+# Para usar manualmente, copie para /etc/dnsmasq.conf
+# e ajuste os valores conforme necessário
+
+# Interface para escutar (WiFi do RPi)
+interface=wlan0
+
+# Não atuar como servidor DNS recursivo
+no-resolv
+no-poll
+
+# Range de IPs que serão distribuídos via DHCP
+# Formato: inicio,fim,tempo_de_lease
+dhcp-range=192.168.50.10,192.168.50.50,12h
+
+# Gateway padrão (o próprio Raspberry Pi)
+dhcp-option=3,192.168.50.1
+
+# Servidores DNS (Google DNS)
+# Os dispositivos usarão estes servidores para resolver nomes
+dhcp-option=6,8.8.8.8,8.8.4.4
+
+# Domínio local
+domain=local
+
+# Arquivo para armazenar leases DHCP
+dhcp-leasefile=/var/lib/misc/dnsmasq.leases
+
+# Logs (útil para debugging)
+log-queries
+log-dhcp
+
+# Não fazer bind em endereços wildcard
+bind-interfaces
+
+# Cache DNS (opcional, aumenta performance)
+cache-size=150
