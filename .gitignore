@@ -29,7 +29,8 @@ wheels/
 
 # Data
 data/
-*.json
+data/**/*.json
+*.data.json
 
 # IDE
 .vscode/
