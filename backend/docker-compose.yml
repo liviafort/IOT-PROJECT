@@ -56,6 +56,20 @@ services:
     networks:
       - iot-network
 
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iot-frontend
+    ports:
+      - "8084:80"
+    restart: unless-stopped
+    networks:
+      - iot-network
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   mosquitto-data:

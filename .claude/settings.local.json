@@ -43,7 +43,8 @@
       "Bash(sudo hostnamectl set-hostname:*)",
       "Bash(sudo sed:*)",
       "Bash(systemctl is-enabled:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(mkdir:*)"
     ]
   }
 }

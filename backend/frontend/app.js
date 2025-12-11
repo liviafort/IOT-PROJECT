@@ -1,0 +1,276 @@
+// ============================================================================
+// CONFIGURAÇÃO
+// ============================================================================
+const API_BASE = 'https://backsubzero-sandbox.idegra.org.br/mqtt-ui';
+const WS_URL = 'https://backsubzero-sandbox.idegra.org.br/mqtt-ws/';
+
+// ============================================================================
+// ESTADO DA APLICAÇÃO
+// ============================================================================
+const state = {
+    chartData: {
+        labels: [],
+        temperatura: [],
+        umidade: [],
+        luminosidade: []
+    },
+    stats: {
+        temp: { min: Infinity, max: -Infinity },
+        humidity: { min: Infinity, max: -Infinity },
+        light: { min: Infinity, max: -Infinity }
+    }
+};
+
+// ============================================================================
+// CONEXÃO SOCKET.IO
+// ============================================================================
+const socket = io(WS_URL, {
+    transports: ['websocket', 'polling']
+});
+
+socket.on('connect', () => {
+    console.log('✅ Socket.IO conectado');
+    updateConnectionStatus('Conectado', true);
+});
+
+socket.on('disconnect', () => {
+    console.log('❌ Socket.IO desconectado');
+    updateConnectionStatus('Desconectado', false);
+});
+
+socket.on('sensor-data', (data) => {
+    console.log('📨 Dados recebidos:', data);
+    updateDashboard(data);
+    updateChart(data);
+});
+
+// ============================================================================
+// GRÁFICO (Chart.js)
+// ============================================================================
+const ctx = document.getElementById('sensorChart').getContext('2d');
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: state.chartData.labels,
+        datasets: [
+            {
+                label: 'Temperatura (°C)',
+                data: state.chartData.temperatura,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Umidade (%)',
+                data: state.chartData.umidade,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            },
+            {
+                label: 'Luminosidade',
+                data: state.chartData.luminosidade,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                tension: 0.4,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Temp (°C) / Umidade (%)'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Luminosidade (lux)'
+                },
+                grid: {
+                    drawOnChartArea: false
+                }
+            }
+        }
+    }
+});
+
+// ============================================================================
+// FUNÇÕES DE ATUALIZAÇÃO
+// ============================================================================
+function updateConnectionStatus(status, connected) {
+    const statusEl = document.getElementById('connection-status');
+    statusEl.textContent = status;
+    const dot = document.querySelector('.status-dot');
+    dot.style.background = connected ? '#4ade80' : '#ef4444';
+}
+
+function updateDashboard(data) {
+    // Temperatura
+    if (data.temperatura != null) {
+        document.getElementById('temp-value').textContent = data.temperatura.toFixed(1);
+        updateStats('temp', data.temperatura);
+    }
+
+    // Umidade
+    if (data.umidade != null) {
+        document.getElementById('humidity-value').textContent = data.umidade.toFixed(1);
+        updateStats('humidity', data.umidade);
+    }
+
+    // Luminosidade
+    if (data.luminosidade != null) {
+        document.getElementById('light-value').textContent = data.luminosidade;
+        updateStats('light', data.luminosidade);
+    }
+
+    // RSSI
+    if (data.rssi != null) {
+        document.getElementById('rssi-value').textContent = data.rssi;
+        const quality = getSignalQuality(data.rssi);
+        document.getElementById('signal-quality').textContent = quality;
+    }
+
+    // Uptime
+    if (data.uptime != null) {
+        document.getElementById('uptime-value').textContent = data.uptime;
+    }
+}
+
+function updateStats(type, value) {
+    const stats = state.stats[type];
+    stats.min = Math.min(stats.min, value);
+    stats.max = Math.max(stats.max, value);
+
+    const minEl = document.getElementById(`${type === 'temp' ? 'temp' : type === 'humidity' ? 'humidity' : 'light'}-min`);
+    const maxEl = document.getElementById(`${type === 'temp' ? 'temp' : type === 'humidity' ? 'humidity' : 'light'}-max`);
+
+    if (minEl) minEl.textContent = stats.min.toFixed(type === 'light' ? 0 : 1);
+    if (maxEl) maxEl.textContent = stats.max.toFixed(type === 'light' ? 0 : 1);
+}
+
+function updateChart(data) {
+    const maxPoints = 20;
+    const timestamp = new Date(data.timestamp).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    // Adicionar novo ponto
+    state.chartData.labels.push(timestamp);
+    state.chartData.temperatura.push(data.temperatura || 0);
+    state.chartData.umidade.push(data.umidade || 0);
+    state.chartData.luminosidade.push(data.luminosidade || 0);
+
+    // Limitar a 20 pontos
+    if (state.chartData.labels.length > maxPoints) {
+        state.chartData.labels.shift();
+        state.chartData.temperatura.shift();
+        state.chartData.umidade.shift();
+        state.chartData.luminosidade.shift();
+    }
+
+    chart.update();
+}
+
+function getSignalQuality(rssi) {
+    if (rssi > -50) return '📶 Excelente';
+    if (rssi > -60) return '📶 Bom';
+    if (rssi > -70) return '📶 Regular';
+    return '📶 Fraco';
+}
+
+// ============================================================================
+// API CALLS
+// ============================================================================
+async function fetchDevices() {
+    try {
+        const response = await fetch(`${API_BASE}/api/devices`);
+        const result = await response.json();
+
+        if (result.success) {
+            displayDevices(result.data);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao buscar dispositivos:', error);
+    }
+}
+
+async function fetchInitialData() {
+    try {
+        const response = await fetch(`${API_BASE}/api/sensor-data?limit=20`);
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+            // Preencher gráfico com dados históricos (invertido para ordem cronológica)
+            result.data.reverse().forEach(data => {
+                updateChart(data);
+            });
+
+            // Atualizar dashboard com último dado
+            const latest = result.data[result.data.length - 1];
+            updateDashboard(latest);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao buscar dados iniciais:', error);
+    }
+}
+
+function displayDevices(devices) {
+    const deviceList = document.getElementById('device-list');
+
+    if (devices.length === 0) {
+        deviceList.innerHTML = '<p style="text-align: center; color: #999;">Nenhum dispositivo encontrado</p>';
+        return;
+    }
+
+    deviceList.innerHTML = devices.map(device => {
+        const lastReading = new Date(device.last_reading).toLocaleString('pt-BR');
+        return `
+            <div class="device-item">
+                <div class="device-icon">📱</div>
+                <div class="device-info">
+                    <h3>${device.device}</h3>
+                    <p>Última leitura: ${lastReading}</p>
+                </div>
+                <div class="device-badge">${device.total_readings} leituras</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================================================
+// INICIALIZAÇÃO
+// ============================================================================
+async function init() {
+    console.log('🚀 Inicializando dashboard...');
+    await fetchInitialData();
+    await fetchDevices();
+
+    // Atualizar lista de dispositivos a cada 30s
+    setInterval(fetchDevices, 30000);
+}
+
+// Iniciar quando a página carregar
+window.addEventListener('DOMContentLoaded', init);
