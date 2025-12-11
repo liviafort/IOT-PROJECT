@@ -38,6 +38,11 @@ socket.on('disconnect', () => {
     updateConnectionStatus('Desconectado', false);
 });
 
+socket.on('connect_error', (error) => {
+    console.error('❌ Erro de conexão Socket.IO:', error);
+    updateConnectionStatus('Erro de conexão', false);
+});
+
 socket.on('sensor-data', (data) => {
     console.log('📨 Dados recebidos:', data);
     updateChart(data);
@@ -117,14 +122,6 @@ const chart = new Chart(ctx, {
 // ============================================================================
 // FUNÇÕES DE ATUALIZAÇÃO
 // ============================================================================
-function updateConnectionStatus(status, connected) {
-    const statusEl = document.getElementById('connection-status');
-    statusEl.textContent = status;
-    const dot = document.querySelector('.status-dot');
-    dot.style.background = connected ? '#4ade80' : '#ef4444';
-}
-
-
 function updateChart(data) {
     const maxPoints = 20;
     const timestamp = new Date(data.timestamp).toLocaleTimeString('pt-BR', {
@@ -272,8 +269,8 @@ function displayDeviceData(data, deviceId) {
                     return `
                         <tr>
                             <td>${timestamp}</td>
-                            <td>${item.temperatura != null ? item.temperatura.toFixed(1) : '-'}</td>
-                            <td>${item.umidade != null ? item.umidade.toFixed(1) : '-'}</td>
+                            <td>${item.temperatura != null ? item.temperatura : '-'}</td>
+                            <td>${item.umidade != null ? item.umidade : '-'}</td>
                             <td>${item.luminosidade != null ? item.luminosidade : '-'}</td>
                             <td>${item.rssi != null ? item.rssi : '-'}</td>
                             <td>${item.uptime != null ? item.uptime : '-'}</td>
