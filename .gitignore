@@ -41,3 +41,6 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Mosquitto logs
+mosquitto/log/

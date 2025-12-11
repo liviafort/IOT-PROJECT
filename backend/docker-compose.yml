@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # MQTT Broker - Recebe dados do Gateway do Raspberry
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: iot-mosquitto
+    ports:
+      - "1883:1883"      # MQTT (Gateway do Rasp conecta aqui)
+      - "9001:9001"      # WebSocket
+    volumes:
+      - ./mosquitto-config:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: iot-postgres
+    environment:
+      POSTGRES_DB: iot_data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  # Backend (MQTT → PostgreSQL → WebSocket)
+  backend:
+    build: .
+    container_name: iot-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+volumes:
+  postgres_data:
+  mosquitto-data:
+  mosquitto-log:
+
+networks:
+  iot-network:
+    driver: bridge
