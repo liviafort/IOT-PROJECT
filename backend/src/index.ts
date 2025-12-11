@@ -108,12 +108,14 @@ mqttClient.on('message', async (topic, message) => {
 // ROTAS API
 // ============================================================================
 
-app.get('/health', (req, res) => {
+const router = express.Router();
+
+router.get('/health', (req, res) => {
   res.json({ status: 'ok', mqtt: mqttClient.connected });
 });
 
 // GET all data
-app.get('/api/sensor-data', async (req, res) => {
+router.get('/api/sensor-data', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 100;
     const device = req.query.device as string;
@@ -137,7 +139,7 @@ app.get('/api/sensor-data', async (req, res) => {
 });
 
 // GET latest by device
-app.get('/api/sensor-data/latest/:device', async (req, res) => {
+router.get('/api/sensor-data/latest/:device', async (req, res) => {
   try {
     const result = await pool.query(
       'SELECT * FROM sensor_data WHERE device = $1 ORDER BY timestamp DESC LIMIT 1',
@@ -153,7 +155,7 @@ app.get('/api/sensor-data/latest/:device', async (req, res) => {
 });
 
 // GET devices list
-app.get('/api/devices', async (req, res) => {
+router.get('/api/devices', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT device, COUNT(*) as total_readings, MAX(timestamp) as last_reading
@@ -164,6 +166,9 @@ app.get('/api/devices', async (req, res) => {
     res.status(500).json({ success: false, error: 'Internal error' });
   }
 });
+
+// Aplicar o prefixo /iot/project a todas as rotas
+app.use('/iot/project', router);
 
 // WebSocket
 io.on('connection', (socket) => {
