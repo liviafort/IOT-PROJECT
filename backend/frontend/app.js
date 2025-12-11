@@ -1,12 +1,6 @@
-// ============================================================================
-// CONFIGURAÇÃO
-// ============================================================================
 const API_BASE = 'https://backsubzero-sandbox.idegra.org.br/mqtt-ui';
 const WS_URL = 'https://backsubzero-sandbox.idegra.org.br/mqtt-ws/';
 
-// ============================================================================
-// ESTADO DA APLICAÇÃO
-// ============================================================================
 const state = {
     chartData: {
         labels: [],
@@ -21,36 +15,30 @@ const state = {
     }
 };
 
-// ============================================================================
-// CONEXÃO SOCKET.IO
-// ============================================================================
 const socket = io(WS_URL, {
     transports: ['websocket', 'polling']
 });
 
 socket.on('connect', () => {
-    console.log('✅ Socket.IO conectado');
+    console.log('Socket.IO conectado');
     updateConnectionStatus('Conectado', true);
 });
 
 socket.on('disconnect', () => {
-    console.log('❌ Socket.IO desconectado');
+    console.log('Socket.IO desconectado');
     updateConnectionStatus('Desconectado', false);
 });
 
 socket.on('connect_error', (error) => {
-    console.error('❌ Erro de conexão Socket.IO:', error);
+    console.error('Erro de conexão Socket.IO:', error);
     updateConnectionStatus('Erro de conexão', false);
 });
 
 socket.on('sensor-data', (data) => {
-    console.log('📨 Dados recebidos:', data);
+    console.log('Dados recebidos:', data);
     updateChart(data);
 });
 
-// ============================================================================
-// GRÁFICO (Chart.js)
-// ============================================================================
 const ctx = document.getElementById('sensorChart').getContext('2d');
 const chart = new Chart(ctx, {
     type: 'line',
@@ -119,9 +107,6 @@ const chart = new Chart(ctx, {
     }
 });
 
-// ============================================================================
-// FUNÇÕES DE ATUALIZAÇÃO
-// ============================================================================
 function updateChart(data) {
     const maxPoints = 20;
     const timestamp = new Date(data.timestamp).toLocaleTimeString('pt-BR', {
@@ -147,10 +132,6 @@ function updateChart(data) {
     chart.update();
 }
 
-
-// ============================================================================
-// API CALLS
-// ============================================================================
 async function fetchDevices() {
     try {
         const response = await fetch(`${API_BASE}/api/devices`);
@@ -160,7 +141,7 @@ async function fetchDevices() {
             displayDevices(result.data);
         }
     } catch (error) {
-        console.error('❌ Erro ao buscar dispositivos:', error);
+        console.error('Erro ao buscar dispositivos:', error);
     }
 }
 
@@ -176,7 +157,7 @@ async function fetchInitialData() {
             });
         }
     } catch (error) {
-        console.error('❌ Erro ao buscar dados iniciais:', error);
+        console.error('Erro ao buscar dados iniciais:', error);
     }
 }
 
@@ -192,7 +173,6 @@ function displayDevices(devices) {
         const lastReading = new Date(device.last_reading).toLocaleString('pt-BR');
         return `
             <div class="device-item" data-device="${device.device}">
-                <div class="device-icon">📱</div>
                 <div class="device-info">
                     <h3>${device.device}</h3>
                     <p>Última leitura: ${lastReading}</p>
@@ -287,11 +267,8 @@ function displayDeviceData(data, deviceId) {
     detailsContent.innerHTML = tableHTML;
 }
 
-// ============================================================================
-// INICIALIZAÇÃO
-// ============================================================================
 async function init() {
-    console.log('🚀 Inicializando dashboard...');
+    console.log('Inicializando dashboard...');
     await fetchInitialData();
     await fetchDevices();
 
@@ -299,5 +276,4 @@ async function init() {
     setInterval(fetchDevices, 10000);
 }
 
-// Iniciar quando a página carregar
 window.addEventListener('DOMContentLoaded', init);

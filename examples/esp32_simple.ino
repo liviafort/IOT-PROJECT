@@ -1,23 +1,3 @@
-/*
- * ESP32/ESP8266 - MQTT IoT Gateway - Raspberry Pi Edition
- *
- * Código PLUG AND PLAY - Funciona em qualquer rede!
- * Conecta automaticamente ao Raspberry Pi via WiFi e envia dados via MQTT
- *
- * BIBLIOTECAS NECESSÁRIAS (instalar via Arduino IDE):
- * - PubSubClient: https://github.com/knolleary/pubsubclient
- *
- * CONFIGURAÇÃO ÚNICA:
- * 1. Altere apenas o DEVICE_ID abaixo (uma vez por ESP)
- * 2. Compile e faça upload
- * 3. PRONTO! Vai funcionar automaticamente
- *
- * COMPATIBILIDADE:
- * - ESP32 (todas as versões)
- * - ESP8266 (NodeMCU, Wemos D1, etc)
- */
-
-// Detectar plataforma automaticamente
 #if defined(ESP32)
   #include <WiFi.h>
 #elif defined(ESP8266)
@@ -28,30 +8,13 @@
 
 #include <PubSubClient.h>
 
-// ============================================================================
-// CONFIGURAÇÃO - MUDE APENAS O DEVICE_ID!
-// ============================================================================
+const char* DEVICE_ID = "esp32_sala_01";
 
-// Identificação única deste dispositivo (OBRIGATÓRIO: mude para cada ESP!)
-const char* DEVICE_ID = "esp32_sala_01";          // ← ÚNICA LINHA QUE VOCÊ PRECISA MUDAR!
-                                                   // Exemplos: esp32_quarto_01, esp32_cozinha_01
-                                                   //           esp8266_jardim_01, esp32_sensor_temp
-
-// ============================================================================
-// CONFIGURAÇÃO FIXA DO RASPBERRY PI - NÃO ALTERE!
-// ============================================================================
-
-// WiFi do Raspberry Pi (Access Point) - NUNCA MUDA!
 const char* WIFI_SSID = "RPi-IoT-Gateway";
 const char* WIFI_PASSWORD = "iotgateway2024";
 
-// MQTT Broker (Raspberry Pi) - IP FIXO!
 const char* MQTT_SERVER = "192.168.50.1";
 const int MQTT_PORT = 1883;
-
-// ============================================================================
-// NÃO ALTERE DAQUI PARA BAIXO - CÓDIGO AUTOMÁTICO
-// ============================================================================
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -63,31 +26,25 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  Serial.println("\n================================");
-  Serial.println("ESP32 IoT - MQTT Sensor");
-  Serial.println("================================");
+  Serial.println("\nESP32 IoT - MQTT Sensor");
   Serial.print("Device ID: ");
   Serial.println(DEVICE_ID);
-  Serial.println("================================\n");
 
   connectWiFi();
   client.setServer(MQTT_SERVER, MQTT_PORT);
 }
 
 void loop() {
-  // Verificar conexão WiFi
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("\n[AVISO] WiFi desconectado! Reconectando...");
     connectWiFi();
   }
 
-  // Verificar conexão MQTT
   if (!client.connected()) {
     connectMQTT();
   }
   client.loop();
 
-  // Enviar dados do sensor
   if (millis() - lastSend > SEND_INTERVAL) {
     lastSend = millis();
     sendSensorData();
@@ -95,8 +52,7 @@ void loop() {
 }
 
 void connectWiFi() {
-  Serial.println("\n----------------------------------");
-  Serial.print("Conectando WiFi: ");
+  Serial.print("\nConectando WiFi: ");
   Serial.println(WIFI_SSID);
   Serial.print("Procurando Raspberry Pi");
 
@@ -112,27 +68,17 @@ void connectWiFi() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println(" OK!");
-    Serial.println("----------------------------------");
     Serial.print("IP atribuído: ");
     Serial.println(WiFi.localIP());
-    Serial.print("Gateway (Raspberry): ");
+    Serial.print("Gateway: ");
     Serial.println(WiFi.gatewayIP());
-    Serial.print("Sinal WiFi: ");
+    Serial.print("RSSI: ");
     Serial.print(WiFi.RSSI());
-    Serial.println(" dBm");
-    Serial.println("----------------------------------");
+    Serial.println(" dBm\n");
   } else {
     Serial.println(" FALHOU!");
-    Serial.println("----------------------------------");
     Serial.println("[ERRO] Não conseguiu conectar ao Raspberry Pi");
-    Serial.println("");
-    Serial.println("Verifique:");
-    Serial.println("1. Raspberry Pi está ligado?");
-    Serial.println("2. WiFi 'RPi-IoT-Gateway' está ativo?");
-    Serial.println("3. ESP está próximo do Raspberry?");
-    Serial.println("");
     Serial.println("Reiniciando em 10 segundos...");
-    Serial.println("----------------------------------");
     delay(10000);
     ESP.restart();
   }
@@ -147,10 +93,7 @@ void connectMQTT() {
 
     if (client.connect(DEVICE_ID)) {
       Serial.println("OK!");
-      Serial.print("Device ID: ");
-      Serial.println(DEVICE_ID);
-      Serial.println("Pronto para enviar dados!");
-      Serial.println("----------------------------------\n");
+      Serial.println("Pronto para enviar dados!\n");
     } else {
       attempts++;
       Serial.print("FALHOU! Código: ");
@@ -170,14 +113,10 @@ void connectMQTT() {
 }
 
 void sendSensorData() {
-  // Simular leitura de sensores (substitua com sensores reais)
-  // Para usar sensores reais, substitua estas linhas por leituras reais
-  // Exemplo: float temperatura = dht.readTemperature();
-  float temperatura = random(150, 350) / 10.0;  // 15.0 a 35.0°C
-  float umidade = random(300, 900) / 10.0;      // 30.0 a 90.0%
-  int luminosidade = random(0, 1024);           // 0 a 1023
+  float temperatura = random(150, 350) / 10.0;
+  float umidade = random(300, 900) / 10.0;
+  int luminosidade = random(0, 1024);
 
-  // Montar JSON com timestamp (uptime em segundos)
   unsigned long uptime = millis() / 1000;
 
   String json = "{";
@@ -189,7 +128,6 @@ void sendSensorData() {
   json += "\"rssi\":" + String(WiFi.RSSI());
   json += "}";
 
-  // Publicar no tópico MQTT
   String topic = "iot/sensor/dados";
   bool ok = client.publish(topic.c_str(), json.c_str());
 
