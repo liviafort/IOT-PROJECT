@@ -4,13 +4,17 @@ FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/
 COPY app.js /usr/share/nginx/html/
 
-# Configuração simples do nginx
+# Configuração do nginx com prefixo /iot/frontend
 RUN echo 'server { \
     listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
+    location /iot/frontend { \
+        alias /usr/share/nginx/html; \
         index index.html; \
-        try_files $uri $uri/ /index.html; \
+        try_files $uri $uri/ /iot/frontend/index.html; \
+    } \
+    location = /iot/frontend/ { \
+        alias /usr/share/nginx/html/; \
+        index index.html; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
