@@ -148,10 +148,66 @@
             background: #f8f9fa;
             border-radius: 10px;
             transition: background 0.3s;
+            cursor: pointer;
         }
 
         .device-item:hover {
             background: #e9ecef;
+        }
+
+        .device-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .device-item.active .device-info p {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .device-details {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .device-details.show {
+            display: block;
+        }
+
+        .device-details h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
         }
 
         .device-icon {
@@ -215,61 +271,6 @@
             </div>
         </header>
 
-        <!-- Cards de Sensores -->
-        <div class="grid">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">🌡️</span>
-                    <span class="card-title">Temperatura</span>
-                </div>
-                <div class="card-value temp" id="temp-value">--</div>
-                <div class="card-unit">°C</div>
-                <div class="card-footer">
-                    <span>Min: <span id="temp-min">--</span>°C</span>
-                    <span>Max: <span id="temp-max">--</span>°C</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">💧</span>
-                    <span class="card-title">Umidade</span>
-                </div>
-                <div class="card-value humidity" id="humidity-value">--</div>
-                <div class="card-unit">%</div>
-                <div class="card-footer">
-                    <span>Min: <span id="humidity-min">--</span>%</span>
-                    <span>Max: <span id="humidity-max">--</span>%</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">💡</span>
-                    <span class="card-title">Luminosidade</span>
-                </div>
-                <div class="card-value light" id="light-value">--</div>
-                <div class="card-unit">lux</div>
-                <div class="card-footer">
-                    <span>Min: <span id="light-min">--</span></span>
-                    <span>Max: <span id="light-max">--</span></span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📡</span>
-                    <span class="card-title">Sinal WiFi</span>
-                </div>
-                <div class="card-value signal" id="rssi-value">--</div>
-                <div class="card-unit">dBm</div>
-                <div class="card-footer">
-                    <span>Uptime: <span id="uptime-value">--</span>s</span>
-                    <span id="signal-quality">--</span>
-                </div>
-            </div>
-        </div>
-
         <!-- Gráfico -->
         <div class="chart-container">
             <h2>📊 Histórico (Últimos 20 registros)</h2>
@@ -281,6 +282,14 @@
             <h2>📱 Dispositivos Ativos</h2>
             <div class="device-list" id="device-list">
                 <p style="text-align: center; color: #999;">Carregando dispositivos...</p>
+            </div>
+
+            <!-- Detalhes do Dispositivo Selecionado -->
+            <div class="device-details" id="device-details">
+                <h3 id="device-details-title">Carregando dados...</h3>
+                <div id="device-details-content">
+                    <p style="text-align: center; color: #999;">Selecione um dispositivo para ver os dados</p>
+                </div>
             </div>
         </div>
     </div>

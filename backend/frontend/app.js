@@ -40,7 +40,6 @@ socket.on('disconnect', () => {
 
 socket.on('sensor-data', (data) => {
     console.log('📨 Dados recebidos:', data);
-    updateDashboard(data);
     updateChart(data);
 });
 
@@ -125,49 +124,6 @@ function updateConnectionStatus(status, connected) {
     dot.style.background = connected ? '#4ade80' : '#ef4444';
 }
 
-function updateDashboard(data) {
-    // Temperatura
-    if (data.temperatura != null) {
-        document.getElementById('temp-value').textContent = data.temperatura.toFixed(1);
-        updateStats('temp', data.temperatura);
-    }
-
-    // Umidade
-    if (data.umidade != null) {
-        document.getElementById('humidity-value').textContent = data.umidade.toFixed(1);
-        updateStats('humidity', data.umidade);
-    }
-
-    // Luminosidade
-    if (data.luminosidade != null) {
-        document.getElementById('light-value').textContent = data.luminosidade;
-        updateStats('light', data.luminosidade);
-    }
-
-    // RSSI
-    if (data.rssi != null) {
-        document.getElementById('rssi-value').textContent = data.rssi;
-        const quality = getSignalQuality(data.rssi);
-        document.getElementById('signal-quality').textContent = quality;
-    }
-
-    // Uptime
-    if (data.uptime != null) {
-        document.getElementById('uptime-value').textContent = data.uptime;
-    }
-}
-
-function updateStats(type, value) {
-    const stats = state.stats[type];
-    stats.min = Math.min(stats.min, value);
-    stats.max = Math.max(stats.max, value);
-
-    const minEl = document.getElementById(`${type === 'temp' ? 'temp' : type === 'humidity' ? 'humidity' : 'light'}-min`);
-    const maxEl = document.getElementById(`${type === 'temp' ? 'temp' : type === 'humidity' ? 'humidity' : 'light'}-max`);
-
-    if (minEl) minEl.textContent = stats.min.toFixed(type === 'light' ? 0 : 1);
-    if (maxEl) maxEl.textContent = stats.max.toFixed(type === 'light' ? 0 : 1);
-}
 
 function updateChart(data) {
     const maxPoints = 20;
@@ -194,12 +150,6 @@ function updateChart(data) {
     chart.update();
 }
 
-function getSignalQuality(rssi) {
-    if (rssi > -50) return '📶 Excelente';
-    if (rssi > -60) return '📶 Bom';
-    if (rssi > -70) return '📶 Regular';
-    return '📶 Fraco';
-}
 
 // ============================================================================
 // API CALLS
@@ -227,10 +177,6 @@ async function fetchInitialData() {
             result.data.reverse().forEach(data => {
                 updateChart(data);
             });
-
-            // Atualizar dashboard com último dado
-            const latest = result.data[result.data.length - 1];
-            updateDashboard(latest);
         }
     } catch (error) {
         console.error('❌ Erro ao buscar dados iniciais:', error);
@@ -248,7 +194,7 @@ function displayDevices(devices) {
     deviceList.innerHTML = devices.map(device => {
         const lastReading = new Date(device.last_reading).toLocaleString('pt-BR');
         return `
-            <div class="device-item">
+            <div class="device-item" data-device="${device.device}">
                 <div class="device-icon">📱</div>
                 <div class="device-info">
                     <h3>${device.device}</h3>
@@ -258,6 +204,90 @@ function displayDevices(devices) {
             </div>
         `;
     }).join('');
+
+    // Adicionar event listeners para cada dispositivo
+    document.querySelectorAll('.device-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const deviceId = item.dataset.device;
+
+            // Remover classe active de todos os itens
+            document.querySelectorAll('.device-item').forEach(i => i.classList.remove('active'));
+
+            // Adicionar classe active ao item clicado
+            item.classList.add('active');
+
+            // Buscar e exibir dados do dispositivo
+            await fetchDeviceData(deviceId);
+        });
+    });
+}
+
+async function fetchDeviceData(deviceId) {
+    const detailsContainer = document.getElementById('device-details');
+    const detailsTitle = document.getElementById('device-details-title');
+    const detailsContent = document.getElementById('device-details-content');
+
+    try {
+        // Mostrar loading
+        detailsContainer.classList.add('show');
+        detailsTitle.textContent = `Dados do dispositivo: ${deviceId}`;
+        detailsContent.innerHTML = '<p style="text-align: center; color: #999;">Carregando dados...</p>';
+
+        // Buscar dados da API
+        const response = await fetch(`${API_BASE}/api/sensor-data?device=${deviceId}`);
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+            displayDeviceData(result.data, deviceId);
+        } else {
+            detailsContent.innerHTML = '<p style="text-align: center; color: #999;">Nenhum dado encontrado para este dispositivo</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao buscar dados do dispositivo:', error);
+        detailsContent.innerHTML = '<p style="text-align: center; color: #ef4444;">Erro ao carregar dados</p>';
+    }
+}
+
+function displayDeviceData(data, deviceId) {
+    const detailsContent = document.getElementById('device-details-content');
+
+    // Pegar os últimos 20 registros
+    const recentData = data.slice(-20);
+
+    const tableHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Temperatura (°C)</th>
+                    <th>Umidade (%)</th>
+                    <th>Luminosidade</th>
+                    <th>RSSI (dBm)</th>
+                    <th>Uptime (s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${recentData.map(item => {
+                    const timestamp = new Date(item.timestamp).toLocaleString('pt-BR');
+                    return `
+                        <tr>
+                            <td>${timestamp}</td>
+                            <td>${item.temperatura != null ? item.temperatura.toFixed(1) : '-'}</td>
+                            <td>${item.umidade != null ? item.umidade.toFixed(1) : '-'}</td>
+                            <td>${item.luminosidade != null ? item.luminosidade : '-'}</td>
+                            <td>${item.rssi != null ? item.rssi : '-'}</td>
+                            <td>${item.uptime != null ? item.uptime : '-'}</td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+        <p style="margin-top: 15px; text-align: center; color: #666; font-size: 0.9em;">
+            Mostrando ${recentData.length} registro(s) mais recente(s)
+        </p>
+    `;
+
+    detailsContent.innerHTML = tableHTML;
 }
 
 // ============================================================================
