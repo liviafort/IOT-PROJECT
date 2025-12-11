@@ -42,7 +42,8 @@
       "Bash(getent hosts:*)",
       "Bash(sudo hostnamectl set-hostname:*)",
       "Bash(sudo sed:*)",
-      "Bash(systemctl is-enabled:*)"
+      "Bash(systemctl is-enabled:*)",
+      "Bash(pgrep:*)"
     ]
   }
 }

@@ -13,7 +13,7 @@ const CONFIG = {
   MQTT_BROKER: 'mqtt://mosquitto:1883',
   MQTT_TOPIC: 'iot/sensor/dados',
   DB_HOST: 'postgres',
-  DB_PORT: 5432,
+  DB_PORT: 5433,
   DB_NAME: 'iot_data',
   DB_USER: 'postgres',
   DB_PASSWORD: 'postgres'
