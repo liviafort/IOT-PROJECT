@@ -296,7 +296,7 @@ async function init() {
     await fetchDevices();
 
     // Atualizar lista de dispositivos a cada 30s
-    setInterval(fetchDevices, 30000);
+    setInterval(fetchDevices, 10000);
 }
 
 // Iniciar quando a página carregar
